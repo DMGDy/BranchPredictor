@@ -223,10 +223,8 @@ update_branch_predictor(GAp_predictor* predictor,int correct,
 {
     if(taken)
     {
+        if(predictor->phts[PHT_choose].counters[predictor->GHR].counter<(1<<predictor->n)-1)
         ++predictor->phts[PHT_choose].counters[predictor->GHR].counter;
-
-        predictor->phts[PHT_choose].counters[predictor->GHR].counter &=
-            ((1<<(predictor->n))-1);
     }
     else
     {
