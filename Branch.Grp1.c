@@ -106,7 +106,7 @@ update_statistics(branch_stats* stats,int correct)
     if(!correct)
         ++stats->mispredictions;
     ++stats->reads;
-    stats->misprediction_rate = (float)stats->mispredictions/(float)stats->reads * 100;
+    stats->misprediction_rate = ((float)stats->mispredictions/(float)stats->reads) * 100;
 }
 /**
  * Prints out the reads and mispredictions from the branch_status object
@@ -226,7 +226,7 @@ update_branch_predictor(GAp_predictor* predictor,int correct,
         ++predictor->phts[PHT_choose].counters[predictor->GHR].counter;
 
         predictor->phts[PHT_choose].counters[predictor->GHR].counter &=
-            (1<<(predictor->n))-1;
+            ((1<<(predictor->n))-1);
     }
     else
     {
@@ -236,8 +236,8 @@ update_branch_predictor(GAp_predictor* predictor,int correct,
     }
     //shift bit, shift 1 if correct, mask overflow to 0
     predictor->GHR <<= 1;
-    predictor->GHR |= (taken);
-    predictor->GHR &= (1<<(predictor->m))-1;
+    predictor->GHR += taken;
+    predictor->GHR &= ((1<<(predictor->m))-1);
 }
 
 /**
@@ -260,20 +260,18 @@ analyze_trace(branch_stats* stats,GAp_predictor* predictor,
     *  Current Program Counter
     *  NEXT Instruction Program Counter
     **/
-    ssize_t entries;
     char* branch_op = strsep(&line," ");
     uint32_t PC = atoi(strsep(&line," "));
     uint32_t PC_next = atoi(strsep(&line," "));
-    //unsigned table = extract_PC_bits(predictor->n,PC);
     //printf("%x\n",PC);
     unsigned PC_extracted = extract_PC_bits(predictor->PC_bits,PC);
     //printf("Extracted: %x\n",extract_PC_bits(predictor->PC_bits,PC));
 
-    int taken = 0;
+    int taken = 1;
     // if PC_next is not PC + 4, branch was taken
-    if((PC + 4) != PC_next)
+    if((PC + 4) == PC_next)
     {
-        taken = 1;
+        taken = 0;
     }
     int prediction = 0;
     int correct = 0;
@@ -282,7 +280,6 @@ analyze_trace(branch_stats* stats,GAp_predictor* predictor,
         prediction = check_prediction(predictor, PC_extracted);
         if(taken == prediction)
         {
-            puts("Correct!");
             correct = 1;
         }
         update_branch_predictor(predictor,correct,taken,PC_extracted);
